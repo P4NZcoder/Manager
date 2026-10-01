@@ -1748,9 +1748,21 @@ async function init(){
   const portalEmpId = urlParams.get('emp');
   const portalShared = urlParams.get('portal');
 
-  const loaded = await cloudLoad();
-  if(!loaded) seedData();
-  setTimeout(()=>{const sp=document.getElementById('splash');if(sp){sp.classList.add('hide');setTimeout(()=>sp.remove(),450);}}, 800);
+  // Load immediately using local data to make app start instantly
+  if (!DB.inited() && DB.getEmployees().length === 0) {
+    seedData();
+  }
+  
+  // Hide splash screen immediately (50ms instead of 800ms)
+  setTimeout(()=>{const sp=document.getElementById('splash');if(sp){sp.classList.add('hide');setTimeout(()=>sp.remove(),450);}}, 50);
+  
+  // Fetch cloud data in the background without blocking the user
+  cloudLoad().then(loaded => {
+    if(loaded) {
+      // Re-render UI transparently if new cloud data arrives
+      renderPage(S.page);
+    }
+  });
   
   if (portalEmpId || portalShared === 'shared') {
     const bnav = document.querySelector('.bottom-nav'); if (bnav) bnav.style.display = 'none';
